@@ -1,0 +1,123 @@
+<?php
+
+require_once "config.php";
+$userID = $userPassword = $userConfpassword = "";
+$userID_err = $userPassword_err = $userConfpassword_err = "";
+
+if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    //CHEKING userID.......
+    if (empty(trim($_POST["userID"]))) {
+        $userID_err == "username cannot be blank";
+    } else {
+        $sql   = "SELECT id from users WHERE userID = ?";
+        $stmt = mysqli_prepare($conn, $sql);
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "s", $param_userID);
+            //set the value of param user...
+            $param_userID = trim($_POST['userID']);
+
+            //Tryg to execute this statement..
+
+            if (mysqli_stmt_execute($stmt)) {
+                mysqli_stmt_store_result($stmt);
+                if (mysqli_stmt_num_rows($stmt) == 1) {
+                    $userID_err = "This username is already taken";
+                } else {
+                    $userID = trim($_POST['userID']);
+                }
+            } else {
+                echo "Somthing went Worng";
+            }
+        }
+    }
+
+    mysqli_stmt_close($stmt);
+
+    // Check for password
+
+    if (empty(trim($_POST['userPassword']))) {
+        $userPassword_err = "password cannot be blank";
+    } elseif (strlen(trim($_POST['userPassword'])) < 6) {
+        $userPassword_err = "Password cannot be less than 6 character ";
+    } else {
+        $userPassword = trim($_POST['userPassword']);
+    }
+
+    // Check for confirm password field
+
+    if (trim($_POST['userPassword']) != trim($_POST['userConfpassword'])) {
+        $userPassword_err = "Password should match.";
+    }
+
+    // If there were no errors, go ahead and insert into the database
+
+    if (empty($userID_err) && empty($userPassword_err) && empty($userConfpassword_err)) {
+        $sql = "INSERT INTO users (userID,userPassword) VALUES (?,?)";
+        $stmt = mysqli_prepare($conn, $sql);
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "ss", $param_userID, $param_userPassword);
+
+            // Seting these parameters
+            $param_userID = $userID;
+            $param_userPassword = password_hash($userPassword, PASSWORD_DEFAULT);
+
+            if (mysqli_stmt_execute($stmt)) {
+                header("location:login.php");
+            } else {
+                echo "Something went wrong...... cannot redirect!!";
+            }
+        }
+        mysqli_stmt_close($stmt);
+    }
+    mysqli_close($conn);
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Here</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="section">
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="box">
+            <div class="float1" style="--i:0"></div>
+            <div class="float2" style="--i:0"></div>
+            <div class="float3" style="--i:0"></div>
+            <div class="float4" style="--i:0"></div>
+        </div>
+        <div class="section2">
+            <div class="panel">
+                <div class="sign">
+                    <h1>Sign Up</h1>
+                </div>
+                <form action="" method="post">
+                    <div class="inputs">
+                        <input type="text" name="userID" placeholder="userename">
+                        <br>
+                        <input type="text" name="userName" placeholder="Full Name">
+                        <br>
+                        <input type="password" name="userPassword" placeholder="password">
+                        <br>
+                        <input type="password" name="userConfpassword" placeholder="Confirm password">
+                        <br>
+                    </div>
+                    <div class="btn1">
+                        <button type="submit">Sign Up</button>
+                        <p>Already have an account?<a href="login.php">Log In</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
